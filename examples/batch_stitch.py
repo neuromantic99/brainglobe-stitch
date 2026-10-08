@@ -14,7 +14,11 @@ from pathlib import Path
 
 from brainglobe_stitch.image_mosaic import ImageMosaic
 
-UMBRELLA_FOLDER = Path("")
+UMBRELLA_FOLDER = Path("/Volumes/MarcBusche/James/Mesospim")
+assert (
+    UMBRELLA_FOLDER.exists()
+), f"Umbrella folder {UMBRELLA_FOLDER} does not exist"
+
 FIJI_PATH = Path("/Applications/Fiji.app")
 OUTPUT_NAME = "stitched.h5"
 
@@ -29,23 +33,40 @@ NORMALISE_INTENSITY_PERCENTILE = 80
 INTERPOLATE_OVERLAPS = True
 
 
+def subfolders(folder: Path) -> list[Path]:
+    return [subfolder for subfolder in folder.glob("*/") if subfolder.is_dir()]
+
+
 def find_folders_to_stitch(umbrella_folder: Path) -> list[Path]:
-    folders = sorted(
-        {h5.parent for h5 in umbrella_folder.rglob("[!.]*bdv.h5")}
-    )
+    dates = [
+        date
+        for date in subfolders(umbrella_folder)
+        if date.name.startswith("20")
+    ]
+
     to_stitch = []
-    for folder in folders:
-        output_path = folder / OUTPUT_NAME
-        if output_path.exists():
-            if not output_path.with_suffix(".xml").exists():
-                # The xml is written after fusing, so a missing xml means
-                # a previous run probably died part way through
-                print(
-                    f"WARNING: {output_path} exists without its .xml, it may "
-                    "be incomplete. Delete it to re-stitch this folder."
-                )
-            continue
-        to_stitch.append(folder)
+
+    for date in dates:
+        mice = subfolders(date)
+        for mouse in mice:
+            acquisitions = subfolders(mouse)
+            for acquisition in acquisitions:
+                if not any(acquisition.glob("*bdv.h5")):
+                    continue
+
+                folder = acquisition
+
+                output_path = folder / OUTPUT_NAME
+                if output_path.exists():
+                    if not output_path.with_suffix(".xml").exists():
+                        # The xml is written after fusing, so a missing xml means
+                        # a previous run probably died part way through
+                        print(
+                            f"WARNING: {output_path} exists without its .xml, it may "
+                            "be incomplete. Delete it to re-stitch this folder."
+                        )
+                    continue
+                to_stitch.append(folder)
     return to_stitch
 
 
