@@ -94,14 +94,6 @@ def main() -> None:
     folders = find_folders_to_stitch(UMBRELLA_FOLDER)
     print(f"Found {len(folders)} folder(s) to stitch")
 
-    # The BigStitcher macro splits its arguments on spaces
-    bad_paths = [folder for folder in folders if " " in str(folder)]
-    if bad_paths:
-        raise ValueError(
-            "BigStitcher cannot handle paths containing spaces:\n"
-            + "\n".join(str(folder) for folder in bad_paths)
-        )
-
     failed = []
     for i, folder in enumerate(folders, start=1):
         print(f"\n[{i}/{len(folders)}] Stitching {folder}")
